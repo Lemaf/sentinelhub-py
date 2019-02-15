@@ -343,7 +343,7 @@ class AwsProduct(AwsService):
         :rtype: (list(download.DownloadRequest), list(str))
         """
         self.download_list = [DownloadRequest(url=self.get_url(metafile), filename=self.get_filepath(metafile),
-                                              data_type=AwsConstants.AWS_FILES[metafile], data_name=metafile
+                                              data_type=AwsConstants.AWS_FILES[metafile], data_name=metafile,
                                               destination_bucket=self.destination_bucket) for
                               metafile in self.metafiles if metafile in AwsConstants.PRODUCT_FILES]
 
