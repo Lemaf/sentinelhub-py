@@ -213,7 +213,8 @@ class AwsService(ABC):
                     data_type = MimeType.RAW
                 if data_name in self.bands + self.metafiles:
                     self.download_list.append(DownloadRequest(url=substruct, filename=subfolder, data_type=data_type,
-                                                              data_name=data_name, product_name=product_name))
+                                                              data_name=data_name, product_name=product_name,
+                                                              destination_bucket=self.destination_bucket))
             else:
                 has_subfolder = True
                 self.structure_recursion(substruct, subfolder)
@@ -342,7 +343,8 @@ class AwsProduct(AwsService):
         :rtype: (list(download.DownloadRequest), list(str))
         """
         self.download_list = [DownloadRequest(url=self.get_url(metafile), filename=self.get_filepath(metafile),
-                                              data_type=AwsConstants.AWS_FILES[metafile], data_name=metafile) for
+                                              data_type=AwsConstants.AWS_FILES[metafile], data_name=metafile
+                                              destination_bucket=self.destination_bucket) for
                               metafile in self.metafiles if metafile in AwsConstants.PRODUCT_FILES]
 
         tile_parent_folder = os.path.join(self.parent_folder, self.product_id)
@@ -527,7 +529,8 @@ class AwsTile(AwsService):
                 filename = self.get_filepath(data_name)
                 self.download_list.append(DownloadRequest(url=url, filename=filename,
                                                           data_type=AwsConstants.AWS_FILES[data_name],
-                                                          data_name=data_name))
+                                                          data_name=data_name,
+                                                          destination_bucket=destination_bucket))
         self.sort_download_list()
         return self.download_list, self.folder_list
 
