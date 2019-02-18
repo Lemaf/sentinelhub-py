@@ -463,12 +463,14 @@ class AwsTile(AwsService):
                       If parameter is set to ``None`` the list will be set automatically.
     :type metafiles: list(str) or None
     """
-    def __init__(self, tile_name, time, aws_index=None, data_source=DataSource.SENTINEL2_L1C, **kwargs):
+    def __init__(self, tile_name, time, aws_index=None, data_source=DataSource.SENTINEL2_L1C,
+                destination_bucket=None, **kwargs):
         self.tile_name = self.parse_tile_name(tile_name)
         self.datetime = self.parse_datetime(time)
         self.date = self.datetime.split('T')[0]
         self.aws_index = aws_index
         self.data_source = data_source
+        self.destination_bucket = destination_bucket
 
         super().__init__(**kwargs)
         self.tile_url = None

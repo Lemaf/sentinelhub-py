@@ -855,7 +855,8 @@ class AwsTileRequest(AwsRequest):
     def create_request(self):
         if self.safe_format:
             self.aws_service = SafeTile(self.tile, self.time, self.aws_index, bands=self.bands,
-                                        metafiles=self.metafiles, data_source=self.data_source)
+                                        metafiles=self.metafiles, data_source=self.data_source,
+                                        destination_bucket=self.destination_bucket)
         else:
             self.aws_service = AwsTile(self.tile, self.time, self.aws_index, bands=self.bands,
                                        metafiles=self.metafiles, data_source=self.data_source)

@@ -7,6 +7,7 @@ import os
 import time
 import warnings
 import json
+import urllib.parse
 import concurrent.futures
 from io import BytesIO
 from xml.etree import ElementTree
@@ -242,10 +243,11 @@ def execute_download_request(request):
         try:
             if request.is_aws_s3():
                 if request.destination_bucket:
+                    _do_aws_request(request)
+                    response_content = None
+                else:
                     response = _do_aws_request(request)
                     response_content = response['Body'].read()
-                else:
-                    _do_aws_request(request)
             else:
                 response = _do_request(request)
                 response.raise_for_status()
@@ -317,17 +319,17 @@ def _do_aws_request(request):
         s3_client = DownloadRequest.GLOBAL_AWS_CLIENT
 
     try:
-        print("Request.destination_bucket: %s" % request.destination_bucket)
         if request.destination_bucket:
             copy_source = {
-                'Bucket': request.destination_bucket,
+                'Bucket': bucket_name,
                 'Key': url_key
             }
             args = {
-                RequestPayer: 'requester'
+                'RequestPayer': 'requester'
             }
-            print("Copiando %s para %s" % (url_key, request.destination_bucket))
-            # s3.meta.client.copy(copy_source, bucket_name, url_key, args)
+            dest_file_in_bucket = urllib.parse.urljoin(request.destination_bucket['key'], request.get_file_path()[2:])
+            s3 = boto3.resource('s3')
+            s3.meta.client.copy(copy_source, request.destination_bucket['bucket'], dest_file_in_bucket, args)
         else:
             return s3_client.get_object(Bucket=bucket_name, Key=url_key, RequestPayer='requester')
     except NoCredentialsError:
