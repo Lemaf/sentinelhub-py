@@ -327,7 +327,7 @@ def _do_aws_request(request):
             args = {
                 'RequestPayer': 'requester'
             }
-            dest_file_in_bucket = urllib.parse.urljoin(request.destination_bucket['key'], request.get_file_path()[2:])
+            dest_file_in_bucket = urllib.parse.urljoin(request.destination_bucket['key'], request.filename)
             s3 = boto3.resource('s3')
             s3.meta.client.copy(copy_source, request.destination_bucket['bucket'], dest_file_in_bucket, args)
         else:
