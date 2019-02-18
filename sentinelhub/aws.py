@@ -299,12 +299,14 @@ class AwsProduct(AwsService):
                       If parameter is set to ``None`` the list will be set automatically.
     :type metafiles: list(str) or None
     """
-    def __init__(self, product_id, tile_list=None, **kwargs):
+    def __init__(self, product_id, tile_list=None, destination_bucket=None, **kwargs):
         self.product_id = product_id.split('.')[0]
         self.tile_list = self.parse_tile_list(tile_list)
 
         self.data_source = self.get_data_source()
         self.safe_type = self.get_safe_type()
+
+        self.destination_bucket = destination_bucket
 
         super().__init__(**kwargs)
 

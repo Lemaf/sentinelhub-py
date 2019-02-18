@@ -807,10 +807,10 @@ class AwsProductRequest(AwsRequest):
     def create_request(self):
         if self.safe_format:
             self.aws_service = SafeProduct(self.product_id, tile_list=self.tile_list, bands=self.bands,
-                                           metafiles=self.metafiles)
+                                           metafiles=self.metafiles, destination_bucket=self.destination_bucket)
         else:
             self.aws_service = AwsProduct(self.product_id, tile_list=self.tile_list, bands=self.bands,
-                                          metafiles=self.metafiles)
+                                          metafiles=self.metafiles, destination_bucket=self.destination_bucket)
 
         self.download_list, self.folder_list = self.aws_service.get_requests()
 
