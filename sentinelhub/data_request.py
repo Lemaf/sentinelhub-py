@@ -32,8 +32,12 @@ class DataRequest(ABC):
     :param data_folder: location of the directory where the fetched data will be saved.
     :type data_folder: str
     """
-    def __init__(self, *, data_folder=None):
+    def __init__(self, *, data_folder=None, destination_bucket=None):
         self.data_folder = data_folder.rstrip('/') if data_folder else None
+        self.destination_bucket = destination_bucket
+        if self.destination_bucket:
+            self.save_response = False
+            self.return_data = False
 
         self.download_list = []
         self.folder_list = []
@@ -851,7 +855,8 @@ class AwsTileRequest(AwsRequest):
     def create_request(self):
         if self.safe_format:
             self.aws_service = SafeTile(self.tile, self.time, self.aws_index, bands=self.bands,
-                                        metafiles=self.metafiles, data_source=self.data_source)
+                                        metafiles=self.metafiles, data_source=self.data_source,
+                                        destination_bucket=self.destination_bucket)
         else:
             self.aws_service = AwsTile(self.tile, self.time, self.aws_index, bands=self.bands,
                                        metafiles=self.metafiles, data_source=self.data_source)
@@ -892,7 +897,7 @@ def get_safe_format(product_id=None, tile=None, entire_product=False, bands=None
 
 
 def download_safe_format(product_id=None, tile=None, folder='.', redownload=False, entire_product=False, bands=None,
-                         data_source=DataSource.SENTINEL2_L1C):
+                         data_source=DataSource.SENTINEL2_L1C, destination_bucket=None):
     """
     Downloads .SAFE format structure in form of nested dictionaries. Either ``product_id`` or ``tile`` must
     be specified.

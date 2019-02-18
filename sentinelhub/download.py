@@ -7,6 +7,7 @@ import os
 import time
 import warnings
 import json
+import urllib.parse
 import concurrent.futures
 from io import BytesIO
 from xml.etree import ElementTree
@@ -76,7 +77,8 @@ class DownloadRequest:
     GLOBAL_AWS_CLIENT = None
 
     def __init__(self, *, url=None, data_folder=None, filename=None, headers=None, request_type=RequestType.GET,
-                 post_values=None, save_response=True, return_data=True, data_type=MimeType.RAW, **properties):
+                 post_values=None, save_response=True, return_data=True, data_type=MimeType.RAW, destination_bucket=None,
+                 **properties):
 
         self.url = url
         self.data_folder = data_folder
@@ -85,6 +87,10 @@ class DownloadRequest:
         self.post_values = post_values
         self.save_response = save_response
         self.return_data = return_data
+        self.destination_bucket = destination_bucket
+        if self.destination_bucket:
+            self.save_response = False
+            self.return_data = False
 
         self.properties = properties
 
@@ -175,7 +181,7 @@ class DownloadRequest:
         return self.url.startswith('s3://')
 
 
-def download_data(request_list, redownload=False, max_threads=None):
+def download_data(request_list, redownload=False, max_threads=None, destination_bucket=None):
     """ Download all requested data or read data from disk, if already downloaded and available and redownload is
     not required.
 
@@ -236,8 +242,12 @@ def execute_download_request(request):
     while try_num > 0:
         try:
             if request.is_aws_s3():
-                response = _do_aws_request(request)
-                response_content = response['Body'].read()
+                if request.destination_bucket:
+                    _do_aws_request(request)
+                    response_content = None
+                else:
+                    response = _do_aws_request(request)
+                    response_content = response['Body'].read()
             else:
                 response = _do_request(request)
                 response.raise_for_status()
@@ -309,7 +319,19 @@ def _do_aws_request(request):
         s3_client = DownloadRequest.GLOBAL_AWS_CLIENT
 
     try:
-        return s3_client.get_object(Bucket=bucket_name, Key=url_key, RequestPayer='requester')
+        if request.destination_bucket:
+            copy_source = {
+                'Bucket': bucket_name,
+                'Key': url_key
+            }
+            args = {
+                'RequestPayer': 'requester'
+            }
+            dest_file_in_bucket = urllib.parse.urljoin(request.destination_bucket['key'], request.get_file_path()[2:])
+            s3 = boto3.resource('s3')
+            s3.meta.client.copy(copy_source, request.destination_bucket['bucket'], dest_file_in_bucket, args)
+        else:
+            return s3_client.get_object(Bucket=bucket_name, Key=url_key, RequestPayer='requester')
     except NoCredentialsError:
         raise ValueError('The requested data is in Requester Pays AWS bucket. In order to download the data please set '
                          'your access key either in AWS credentials file or in sentinelhub config.json file using '
@@ -387,7 +409,7 @@ def _save_if_needed(request, response_content):
     :param response_content: content of the download response
     :type response_content: bytes
     """
-    if request.save_response:
+    if request.save_response and not request.destination_bucket:
         file_path = request.get_file_path()
         create_parent_folder(file_path)
         with open(file_path, 'wb') as file:
