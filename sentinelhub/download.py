@@ -328,7 +328,7 @@ def _do_aws_request(request):
                 'RequestPayer': 'requester'
             }
             dest_file_in_bucket = urllib.parse.urljoin(request.destination_bucket['key'], request.filename)
-            s3 = boto3.resource('s3')
+            s3 = boto3.Session().resource('s3')
             s3.meta.client.copy(copy_source, request.destination_bucket['bucket'], dest_file_in_bucket, args)
         else:
             return s3_client.get_object(Bucket=bucket_name, Key=url_key, RequestPayer='requester')
