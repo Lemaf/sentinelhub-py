@@ -409,7 +409,17 @@ def _save_if_needed(request, response_content):
     :param response_content: content of the download response
     :type response_content: bytes
     """
-    if request.save_response and not request.destination_bucket:
+    if request.destination_bucket:
+        """
+        If it is an aws request, it has already been copied to the destination_bucket.
+        However, if it is a http request, we must copy it to the destination bucket here.
+        """
+        if not request.is_aws_s3():
+            dest_file_in_bucket = urllib.parse.urljoin(request.destination_bucket['key'], request.filename)
+            s3 = boto3.Session().resource('s3')
+            obj = s3.Object(request.destination_bucket['bucket'], dest_file_in_bucket)
+            obj.put(Body=response_content)
+    elif request.save_response:
         file_path = request.get_file_path()
         create_parent_folder(file_path)
         with open(file_path, 'wb') as file:
